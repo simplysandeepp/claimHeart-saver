@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ClaimHeart — Hospital Dashboard. Select demo cases and submit claims for adjudication." />
+  <title>ClaimHeart | Hospital Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="data.js" defer></script>
+  <script src="agents.js" defer></script>
+
+  <style>
+    /* ── Hospital Identity ── */
+    .identity-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 680px) { .identity-row { grid-template-columns: 1fr; } }
+    .identity-field {
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+    .identity-field .if-label {
+      font-size: 0.73rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--color-text-muted); margin-bottom: 5px;
+    }
+    .identity-field .if-value { font-size: 0.95rem; font-weight: 600; color: var(--color-primary); }
+
+    /* ── Patient Info Strip ── */
+    .patient-info-strip {
+      background: #e6f7f1;
+      border: 1px solid var(--color-approved);
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: #005c3b;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── Patient Guard Card ── */
+    .guard-card {
+      max-width: 480px;
+      margin: 60px auto;
+      text-align: center;
+      padding: 48px 32px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      background: #fff;
+    }
+    .guard-icon { font-size: 3rem; margin-bottom: 16px; color: #aaa; }
+    .guard-heading { font-size: 1.15rem; font-weight: 700; color: var(--color-primary); margin-bottom: 10px; }
+    .guard-subtext { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; margin-bottom: 24px; }
+
+    /* ── Case Cards ── */
+    .case-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 780px) { .case-grid { grid-template-columns: 1fr; } }
+    .case-card {
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: 22px 20px;
+      cursor: pointer; background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+    .case-card:hover { border-color: #8ca0b8; box-shadow: var(--shadow-card-hover); }
+    .case-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(10,37,64,0.12); }
+    .case-card .case-title { font-size: 0.95rem; font-weight: 700; color: var(--color-primary); margin-bottom: 6px; }
+    .case-card .case-subtitle { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
+    .case-check { position: absolute; top: 12px; right: 14px; font-size: 1rem; color: var(--color-primary); display: none; font-weight: 700; }
+    .case-card.selected .case-check { display: block; }
+
+    /* ── Upload Phase ── */
+    .upload-section { display: none; }
+    .upload-section.active { display: block; }
+    .upload-heading { font-size: 1rem; font-weight: 700; color: var(--color-primary); margin-bottom: 4px; }
+    .upload-subtext { font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 20px; }
+
+    .upload-slot {
+      border: 2px dashed var(--color-border);
+      border-radius: 10px;
+      padding: 22px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--color-bg-subtle);
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .upload-slot:hover { border-color: #4A90E2; background: #f0f5ff; }
+    .upload-slot.drag-over { border-color: #4A90E2; background: #e8f0ff; }
+    .upload-slot.filled { border-color: var(--color-approved); background: #f0fbf6; border-style: solid; }
+    .upload-slot.error { border-color: var(--color-denied); }
+
+    .upload-cloud { font-size: 2rem; color: #9aaec8; margin-bottom: 8px; }
+    .upload-slot-label { font-size: 0.9rem; font-weight: 700; color: var(--color-primary); margin-bottom: 4px; }
+    .upload-browse-text { font-size: 0.78rem; color: var(--color-text-muted); }
+    .upload-error-text { font-size: 0.75rem; color: var(--color-denied); margin-top: 6px; font-weight: 500; }
+
+    /* Filled slot content */
+    .slot-filled-content { display: flex; align-items: center; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .slot-check { font-size: 1.4rem; color: var(--color-approved); }
+    .slot-filename { font-size: 0.85rem; font-weight: 600; color: var(--color-primary); }
+    .slot-filesize { font-size: 0.78rem; color: var(--color-text-muted); }
+    .slot-remove { font-size: 0.75rem; color: var(--color-text-muted); cursor: pointer; text-decoration: underline; margin-left: 6px; }
+    .slot-remove:hover { color: var(--color-denied); }
+
+    /* Process Docs button */
+    #process-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      border-radius: 10px;
+      margin-top: 4px;
+      transition: background 0.4s ease, opacity 0.4s ease;
+    }
+    #process-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+    /* ── Document Panel / OCR ── */
+    .doc-section { display: none; }
+    .doc-section.active { display: block; }
+    .doc-panel {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      overflow: hidden; background: #fff;
+      margin-bottom: 14px;
+    }
+    .doc-panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 18px; background: var(--color-bg-subtle);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .doc-panel-title { font-size: 0.875rem; font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 10px; }
+    .badge-ocr-complete {
+      background: #e6f7f1; color: var(--color-approved);
+      font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; display: none;
+    }
+    .doc-panel-body { padding: 18px; min-height: 80px; }
+
+    /* Scanner */
+    .scan-container { position: relative; height: 60px; background: #f5f7fa; border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+    .scan-bar {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #4A90E2, transparent);
+      box-shadow: 0 0 6px rgba(74,144,226,0.8);
+      animation: scanMove 2s linear infinite;
+    }
+    @keyframes scanMove { 0% { top: 0%; } 100% { top: 100%; } }
+    .scan-label { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 0.75rem; font-style: italic; color: var(--color-text-muted); }
+
+    /* Spinner */
+    .ocr-spinner-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+    .ocr-spinner { width: 16px; height: 16px; border: 2px solid #dde3ec; border-top-color: #4A90E2; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ocr-spinner-label { font-size: 0.78rem; font-style: italic; color: var(--color-text-muted); }
+
+    /* Typing */
+    .doc-pre { font-family: 'Inter', monospace; font-size: 0.78rem; line-height: 1.7; color: var(--color-text); white-space: pre-wrap; word-break: break-word; max-height: 180px; overflow-y: auto; margin: 0; }
+    .typing-cursor { display: inline-block; width: 2px; height: 1em; background: var(--color-primary); margin-left: 1px; vertical-align: text-bottom; animation: blink 0.7s step-end infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Terminal Strip ── */
+    .terminal-strip { display: none; }
+    .terminal-strip.active {
+      display: block;
+      background: #0D1117;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      height: 180px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+    }
+    .terminal-header {
+      font-size: 0.68rem;
+      color: #555e6d;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+    .terminal-line {
+      font-size: 0.77rem;
+      color: #00FF90;
+      line-height: 1.7;
+      display: block;
+    }
+
+    /* ── Submit ── */
+    #run-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.05rem;
+      border-radius: 10px;
+      transition: background 0.4s ease, opacity 0.4s ease;
+    }
+    #run-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+
+    /* ── Placeholder ── */
+    .placeholder-box {
+      text-align: center; padding: 36px 20px; color: var(--color-text-muted);
+      background: var(--color-bg-subtle); border: 1.5px dashed var(--color-border);
+      border-radius: var(--radius-card); font-size: 0.9rem;
+    }
+    .placeholder-box .ph-icon { font-size: 2rem; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Top Bar ── -->
+  <header class="topbar">
+    <a href="index.html" class="brand">Claim<span>Heart</span></a>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <a href="patient.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">&#128100; Patient</a>
+      <a href="hospital.html" target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">&#10010; Hospital</a>
+      <a href="insurer.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">&#128737; Insurer</a>
+      <a href="index.html"    target="_blank" style="color:rgba(255,255,255,0.5);  font-size:0.83rem;">← Home</a>
+    </div>
+  </header>
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="container">
+      <h2>Hospital Dashboard</h2>
+      <p>Select a demo case, upload documents, and submit for AI adjudication.</p>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="container" id="main-container">
+      <!-- content injected by JS after patient guard check -->
+    </div>
+  </main>
+
+  <footer class="footer">
+    &copy; 2025 ClaimHeart. All rights reserved.
+  </footer>
+
+</div><!-- /.page-wrapper -->
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────────
+  var selectedCase = null;
+  var loadedDocs   = {};
+  var slotFiles    = {};   // { slotIndex: File | null }
+  var animRunning  = false;
+
+  // ── Per-case slot definitions ─────────────────────────────────────────────────
+  var CASE_UPLOAD_SLOTS = {
+    1: ['Pre-Authorisation Form'],
+    2: ['Dengue Prescription', 'Platelet Test Report', 'Hospital Billing Invoice'],
+    3: ['Dengue Prescription', 'Platelet Test Report', 'Hospital Billing Invoice']
+  };
+
+  // Maps slot index → SYNTHETIC_DATA key per case
+  var CASE_DOC_KEYS = {
+    1: ['preAuthForm'],
+    2: ['denguePrescription', 'plateletReport', 'billingFraud'],
+    3: ['denguePrescription', 'plateletReport', 'billingClean']
+  };
+
+  // ── Patient data ──────────────────────────────────────────────────────────────
+  var CASE_PATIENTS = {
+    1: { fullName:'Riya Sharma', dob:'1995-03-14', gender:'Female', contact:'+91 98765 00001',
+         email:'riya.sharma@example.com', policyNumber:'HDFC-ERGO-2025-784512',
+         insuranceCompany:'HDFC ERGO', policyStart:'2025-01-25', preExisting:'None reported' },
+    2: { fullName:'Arjun Mehta', dob:'1993-06-12', gender:'Male', contact:'+91 98765 00002',
+         email:'arjun.mehta@example.com', policyNumber:'HDFC-ERGO-2025-991203',
+         insuranceCompany:'HDFC ERGO', policyStart:'2023-03-10', preExisting:'None reported' },
+    3: { fullName:'Arjun Mehta', dob:'1993-06-12', gender:'Male', contact:'+91 98765 00002',
+         email:'arjun.mehta@example.com', policyNumber:'HDFC-ERGO-2025-991203',
+         insuranceCompany:'HDFC ERGO', policyStart:'2023-03-10', preExisting:'None reported' }
+  };
+  var CASE_LABELS = { 1:'Case 1 — Waiting Period (Fever)', 2:'Case 2 — Dengue Fraud (3 Injections)', 3:'Case 3 — Dengue Clean (2 Injections)' };
+  var CASE_TYPES  = { 1:'Pre-Authorisation (Fever)', 2:'Cashless Hospitalisation (Dengue)', 3:'Cashless Hospitalisation (Dengue)' };
+
+  // ── Delay helper ──────────────────────────────────────────────────────────────
+  function delay(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  // ── Escape HTML ───────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Format file size ──────────────────────────────────────────────────────────
+  function fmtSize(bytes) {
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1024).toFixed(1) + ' KB';
+  }
+
+  // ── PAGE INIT ─────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    var patient = window.getPatient ? window.getPatient() : null;
+    var container = document.getElementById('main-container');
+
+    if (!patient || !patient.fullName) {
+      // ── No patient: show guard card, hide everything else ──
+      container.innerHTML =
+        '<div class="guard-card">' +
+          '<div class="guard-icon">&#128100;</div>' +
+          '<div class="guard-heading">No Patient Profile Found</div>' +
+          '<div class="guard-subtext">The patient must complete their profile on the Patient Dashboard before a hospital claim can be initiated.</div>' +
+          '<a href="patient.html" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Go to Patient Dashboard</a>' +
+        '</div>';
+      return;
+    }
+
+    // ── Patient exists: render normal content ──
+    renderHospitalContent(patient, container);
+  });
+
+  // ── Render main hospital content ──────────────────────────────────────────────
+  function renderHospitalContent(patient, container) {
+    container.innerHTML =
+
+      // Patient info strip
+      '<div class="patient-info-strip">&#9989; Patient loaded: <strong>' +
+        escHtml(patient.fullName) + '</strong>&nbsp;&nbsp;|&nbsp;&nbsp;Policy: <strong>' +
+        escHtml(patient.policyNumber || '—') + '</strong></div>' +
+
+      // Section 1: Hospital Identity
+      '<section class="section">' +
+        '<div class="section-title">Hospital Identity</div>' +
+        '<div class="identity-row">' +
+          '<div class="identity-field"><div class="if-label">Hospital Name</div><div class="if-value">City Care Hospital, Mumbai</div></div>' +
+          '<div class="identity-field"><div class="if-label">Registration Number</div><div class="if-value">MH-2019-HC-00472</div></div>' +
+          '<div class="identity-field"><div class="if-label">Attending Doctor</div><div class="if-value">Dr Rakesh Iyer</div></div>' +
+        '</div>' +
+      '</section>' +
+
+      // Section 2: Case Selector
+      '<section class="section">' +
+        '<div class="section-title">Select Demo Case</div>' +
+        '<div class="case-grid">' +
+          '<div class="case-card" id="case-card-1" onclick="selectCase(1)"><span class="case-check">✓</span><div class="case-title">Case 1</div><div class="case-subtitle">Patient Claim Submission</div></div>' +
+          '<div class="case-card" id="case-card-2" onclick="selectCase(2)"><span class="case-check">✓</span><div class="case-title">Case 2</div><div class="case-subtitle">Patient Claim Submission</div></div>' +
+          '<div class="case-card" id="case-card-3" onclick="selectCase(3)"><span class="case-check">✓</span><div class="case-title">Case 3</div><div class="case-subtitle">Patient Claim Submission</div></div>' +
+        '</div>' +
+      '</section>' +
+
+      // Section 3: Upload Phase (hidden until case selected)
+      '<section class="section">' +
+        '<div id="upload-section" class="upload-section">' +
+          '<div class="upload-heading">Upload Patient Documents</div>' +
+          '<div class="upload-subtext">Supported formats: JPG, PNG, PDF &mdash; Max 10MB per file</div>' +
+          '<div id="upload-slots"></div>' +
+          '<button class="btn btn-primary" id="process-btn" disabled onclick="processDocuments()">&#9654; Process Documents</button>' +
+        '</div>' +
+      '</section>' +
+
+      // Section 4: Document Preview (hidden until Process is clicked)
+      '<section class="section">' +
+        '<div id="doc-section" class="doc-section">' +
+          '<div class="section-title">Loaded Documents</div>' +
+          '<div id="doc-preview-area"></div>' +
+        '</div>' +
+      '</section>' +
+
+      // Terminal strip
+      '<div class="terminal-strip" id="terminal-strip">' +
+        '<div class="terminal-header">ClaimHeart OCR Engine v1.0</div>' +
+        '<div id="terminal-lines"></div>' +
+      '</div>' +
+
+      // Section 5: Submit
+      '<section class="section">' +
+        '<button class="btn btn-primary" id="run-btn" disabled onclick="submitClaim()">&#9889; Run ClaimHeart Analysis</button>' +
+      '</section>';
+  }
+
+  // ── Select Case ───────────────────────────────────────────────────────────────
+  function selectCase(num) {
+    if (animRunning) return;
+
+    selectedCase = num;
+    [1,2,3].forEach(function(n) {
+      var c = document.getElementById('case-card-' + n);
+      if (c) c.classList.remove('selected');
+    });
+    var card = document.getElementById('case-card-' + num);
+    if (card) card.classList.add('selected');
+
+    var patient = window.getPatient ? window.getPatient() : CASE_PATIENTS[num];
+    if (window.savePatient) window.savePatient(patient || CASE_PATIENTS[num]);
+
+    // Reset state
+    slotFiles = {};
+    document.getElementById('run-btn').disabled = true;
+
+    // Hide doc section + terminal
+    var docSec = document.getElementById('doc-section');
+    if (docSec) docSec.classList.remove('active');
+    var term = document.getElementById('terminal-strip');
+    if (term) { term.classList.remove('active'); document.getElementById('terminal-lines').innerHTML = ''; }
+
+    // Show upload phase
+    renderUploadSlots(num);
+    document.getElementById('upload-section').classList.add('active');
+    document.getElementById('process-btn').disabled = true;
+  }
+
+  // ── Render Upload Slots ───────────────────────────────────────────────────────
+  function renderUploadSlots(caseNum) {
+    var slots = CASE_UPLOAD_SLOTS[caseNum] || [];
+    var container = document.getElementById('upload-slots');
+    var html = '';
+    slots.forEach(function(label, idx) {
+      html +=
+        '<div class="upload-slot" id="slot-' + idx + '" ' +
+              'onclick="triggerFileInput(' + idx + ')" ' +
+              'ondragover="onDragOver(event,' + idx + ')" ' +
+              'ondragleave="onDragLeave(' + idx + ')" ' +
+              'ondrop="onDrop(event,' + idx + ')">' +
+          '<input type="file" id="file-input-' + idx + '" style="display:none;" accept="image/jpeg,image/png,application/pdf" onchange="handleFile(' + idx + ',this)">' +
+          '<div id="slot-content-' + idx + '">' +
+            '<div class="upload-cloud">&#9729;</div>' +
+            '<div class="upload-slot-label">' + escHtml(label) + '</div>' +
+            '<div class="upload-browse-text">Drag and drop or click to browse</div>' +
+          '</div>' +
+          '<div class="upload-error-text" id="slot-error-' + idx + '" style="display:none;">File too large. Maximum size is 10MB.</div>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function triggerFileInput(idx) {
+    var inp = document.getElementById('file-input-' + idx);
+    if (inp) inp.click();
+  }
+
+  function onDragOver(e, idx) {
+    e.preventDefault();
+    var slot = document.getElementById('slot-' + idx);
+    if (slot) slot.classList.add('drag-over');
+  }
+  function onDragLeave(idx) {
+    var slot = document.getElementById('slot-' + idx);
+    if (slot) slot.classList.remove('drag-over');
+  }
+  function onDrop(e, idx) {
+    e.preventDefault();
+    var slot = document.getElementById('slot-' + idx);
+    if (slot) slot.classList.remove('drag-over');
+    var files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files[0]) processFileSelection(idx, files[0]);
+  }
+
+  function handleFile(idx, input) {
+    if (input.files && input.files[0]) processFileSelection(idx, input.files[0]);
+  }
+
+  var MAX_SIZE = 10 * 1024 * 1024;
+
+  function processFileSelection(idx, file) {
+    var errEl = document.getElementById('slot-error-' + idx);
+    var slot  = document.getElementById('slot-' + idx);
+    var contentEl = document.getElementById('slot-content-' + idx);
+
+    errEl.style.display = 'none';
+    slot.classList.remove('error', 'filled');
+
+    if (file.size > MAX_SIZE) {
+      errEl.style.display = 'block';
+      slot.classList.add('error');
+      slotFiles[idx] = null;
+      checkAllSlotsFilled();
+      return;
+    }
+
+    slotFiles[idx] = file;
+    slot.classList.add('filled');
+
+    contentEl.innerHTML =
+      '<div class="slot-filled-content">' +
+        '<span class="slot-check">&#10003;</span>' +
+        '<span class="slot-filename">' + escHtml(file.name) + '</span>' +
+        '<span class="slot-filesize">' + fmtSize(file.size) + '</span>' +
+        '<span class="slot-remove" onclick="removeFile(' + idx + ');event.stopPropagation();">Remove</span>' +
+      '</div>';
+
+    checkAllSlotsFilled();
+  }
+
+  function removeFile(idx) {
+    var slots = CASE_UPLOAD_SLOTS[selectedCase] || [];
+    slotFiles[idx] = null;
+
+    var slot = document.getElementById('slot-' + idx);
+    if (slot) slot.classList.remove('filled', 'error');
+
+    var contentEl = document.getElementById('slot-content-' + idx);
+    var label = slots[idx] || 'Document';
+    contentEl.innerHTML =
+      '<div class="upload-cloud">&#9729;</div>' +
+      '<div class="upload-slot-label">' + escHtml(label) + '</div>' +
+      '<div class="upload-browse-text">Drag and drop or click to browse</div>';
+
+    // Reset file input
+    var inp = document.getElementById('file-input-' + idx);
+    if (inp) inp.value = '';
+
+    checkAllSlotsFilled();
+  }
+
+  function checkAllSlotsFilled() {
+    var slots = CASE_UPLOAD_SLOTS[selectedCase] || [];
+    var allFilled = true;
+    for (var i = 0; i < slots.length; i++) {
+      if (!slotFiles[i]) { allFilled = false; break; }
+    }
+    document.getElementById('process-btn').disabled = !allFilled;
+  }
+
+  // ── PROCESS DOCUMENTS (Phase 2 + 3) ──────────────────────────────────────────
+  async function processDocuments() {
+    if (animRunning) return;
+    animRunning = true;
+
+    // Build loadedDocs from SYNTHETIC_DATA (not from actual files)
+    var sd = window.SYNTHETIC_DATA || {};
+    var keys = CASE_DOC_KEYS[selectedCase] || [];
+    var slots = CASE_UPLOAD_SLOTS[selectedCase] || [];
+    loadedDocs = {};
+    slots.forEach(function(label, idx) {
+      loadedDocs[label] = sd[keys[idx]] || '';
+    });
+
+    // Hide upload section
+    document.getElementById('upload-section').classList.remove('active');
+
+    // Show doc section + terminal
+    var docSec = document.getElementById('doc-section');
+    docSec.classList.add('active');
+    var term = document.getElementById('terminal-strip');
+    term.classList.add('active');
+
+    // Build empty panel shells
+    buildPanelShells(loadedDocs);
+
+    // Run each doc sequentially: OCR anim + terminal in parallel
+    var docKeys = Object.keys(loadedDocs);
+    for (var i = 0; i < docKeys.length; i++) {
+      var slotLabel = slots[i] || docKeys[i];
+      await Promise.all([
+        animateDoc(i, loadedDocs[docKeys[i]]),
+        appendTerminalLinesForDoc(slotLabel)
+      ]);
+    }
+
+    // Final terminal lines
+    await appendTerminalLine('> All documents processed successfully.');
+    await delay(400);
+    await appendTerminalLine('> Ready for ClaimHeart agent analysis.');
+
+    animRunning = false;
+    document.getElementById('run-btn').disabled = false;
+  }
+
+  // ── Build empty doc panel shells ─────────────────────────────────────────────
+  function buildPanelShells(docs) {
+    var area = document.getElementById('doc-preview-area');
+    var keys = Object.keys(docs);
+    var html = '';
+    keys.forEach(function(name, idx) {
+      html +=
+        '<div class="doc-panel" id="dpanel-' + idx + '">' +
+          '<div class="doc-panel-header">' +
+            '<div class="doc-panel-title"><span>&#128196;</span><span>' + escHtml(name) + '</span></div>' +
+            '<span class="badge-ocr-complete" id="dpanel-badge-' + idx + '">&#10004; OCR Complete</span>' +
+          '</div>' +
+          '<div class="doc-panel-body" id="dpanel-body-' + idx + '">' +
+            '<div id="dpanel-status-' + idx + '"></div>' +
+          '</div>' +
+        '</div>';
+    });
+    area.innerHTML = html;
+  }
+
+  // ── OCR animation per document ────────────────────────────────────────────────
+  async function animateDoc(idx, text) {
+    var statusEl = document.getElementById('dpanel-status-' + idx);
+    var bodyEl   = document.getElementById('dpanel-body-' + idx);
+
+    // Step 1: Scanning — 1500ms
+    statusEl.innerHTML =
+      '<div class="scan-container"><div class="scan-bar"></div><div class="scan-label">Scanning document...</div></div>';
+    await delay(1500);
+
+    // Step 2: Spinner — 1000ms
+    statusEl.innerHTML =
+      '<div class="ocr-spinner-wrap"><div class="ocr-spinner"></div><span class="ocr-spinner-label">Extracting text via OCR...</span></div>';
+    await delay(1000);
+
+    // Step 3: Typing
+    statusEl.innerHTML = '';
+    var pre = document.createElement('pre');
+    pre.className = 'doc-pre';
+    bodyEl.appendChild(pre);
+    var cursor = document.createElement('span');
+    cursor.className = 'typing-cursor';
+    bodyEl.appendChild(cursor);
+
+    await new Promise(function(resolve) {
+      var i = 0;
+      var iv = setInterval(function() {
+        if (i < text.length) {
+          pre.textContent += text[i];
+          pre.scrollTop = pre.scrollHeight;
+          i++;
+        } else { clearInterval(iv); resolve(); }
+      }, 8);
+    });
+
+    // Step 4: Complete
+    cursor.remove();
+    var badge = document.getElementById('dpanel-badge-' + idx);
+    if (badge) badge.style.display = 'inline-block';
+  }
+
+  // ── Terminal strip helpers ────────────────────────────────────────────────────
+  async function appendTerminalLine(line) {
+    var linesEl = document.getElementById('terminal-lines');
+    if (!linesEl) return;
+    var span = document.createElement('span');
+    span.className = 'terminal-line';
+    span.textContent = line;
+    linesEl.appendChild(span);
+    var strip = document.getElementById('terminal-strip');
+    if (strip) strip.scrollTop = strip.scrollHeight;
+  }
+
+  async function appendTerminalLinesForDoc(slotLabel) {
+    var lines = [
+      '> Initialising OCR engine...',
+      '> Loading image buffer for ' + slotLabel + '...',
+      '> Detecting document boundaries...',
+      '> Running text segmentation pass 1...',
+      '> Running text segmentation pass 2...',
+      '> Confidence score: 94.7%',
+      '> Extracting structured fields...',
+      '> Mapping to ClaimHeart schema...',
+      '> Text extraction complete. Passing to RAG pipeline...'
+    ];
+    for (var i = 0; i < lines.length; i++) {
+      await delay(400);
+      await appendTerminalLine(lines[i]);
+    }
+  }
+
+  // ── Submit Claim ──────────────────────────────────────────────────────────────
+  function submitClaim() {
+    if (!selectedCase || animRunning) return;
+
+    var patient = window.getPatient ? window.getPatient() : CASE_PATIENTS[selectedCase];
+    var claim = {
+      claimId:         'CLM-' + Date.now(),
+      caseNumber:       selectedCase,
+      caseLabel:        CASE_LABELS[selectedCase],
+      caseType:         CASE_TYPES[selectedCase],
+      patientName:      patient ? patient.fullName         : '',
+      policyNumber:     patient ? patient.policyNumber     : '',
+      policyStart:      patient ? patient.policyStart      : '',
+      insurer:          patient ? patient.insuranceCompany : '',
+      hospitalName:     'City Care Hospital, Mumbai',
+      hospitalReg:      'MH-2019-HC-00472',
+      attendingDoctor:  'Dr Rakesh Iyer',
+      documents:        loadedDocs,
+      amountClaimed:    selectedCase === 1 ? 28000 : (selectedCase === 2 ? 22150 : 17740),
+      dateSubmitted:    new Date().toISOString(),
+      status:           'Pending'
+    };
+
+    if (window.saveClaim) window.saveClaim(claim);
+    window.location.href = 'insurer.html';
+  }
+</script>
+</body>
+</html>

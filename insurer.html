@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ClaimHeart — Insurer Dashboard. AI-powered claim adjudication in real time." />
+  <title>ClaimHeart | Insurer Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="data.js" defer></script>
+  <script src="agents.js" defer></script>
+
+  <style>
+    /* ── Claim Header Card ── */
+    .claim-header-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .claim-header-fields { flex: 1; min-width: 260px; }
+    .claim-header-field  { margin-bottom: 12px; }
+    .chf-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      margin-bottom: 3px;
+    }
+    .chf-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+    .claim-status-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+    }
+    .status-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+    }
+    .big-badge {
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-align: center;
+    }
+    .big-badge-analysing { background:#eee; color:#555; }
+    .big-badge-approved  { background:#e6f7f1; color:var(--color-approved); border:1.5px solid var(--color-approved); }
+    .big-badge-denied    { background:#fdeceb; color:var(--color-denied);   border:1.5px solid var(--color-denied); }
+    .big-badge-review    { background:#fef4e3; color:var(--color-review);   border:1.5px solid var(--color-review); }
+    .big-badge-error     { background:#eee;    color:#555; }
+
+    /* ── Agent Cards ── */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 780px) { .agent-grid { grid-template-columns: 1fr; } }
+
+    .agent-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      transition: border-color 0.3s;
+    }
+    .agent-card.running  { border-color: #4A90E2; }
+    .agent-card.pass     { border-color: var(--color-approved); }
+    .agent-card.flag     { border-color: var(--color-denied); }
+    .agent-card.review   { border-color: var(--color-review); }
+    .agent-card.error    { border-color: #aaa; }
+
+    .agent-card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      margin-bottom: 14px;
+    }
+    .agent-card-icon {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-size: 1.1rem;
+    }
+
+    /* Pulse loader */
+    .pulse-loader {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+    }
+    .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #4A90E2;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    .pulse-dot:nth-child(2) { animation-delay: 0.2s; }
+    .pulse-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1);   opacity: 1; }
+    }
+    .pulse-text {
+      font-size: 0.82rem;
+      color: #4A90E2;
+      font-weight: 500;
+    }
+
+    /* Agent idle state */
+    .agent-idle {
+      padding: 10px 0;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .agent-reason {
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: var(--color-text);
+      margin-top: 10px;
+    }
+    .agent-confidence {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    .agent-confidence strong { color: var(--color-primary); }
+
+    /* ── Final Decision ── */
+    .final-decision-card { padding: 28px; }
+    .final-decision-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .final-decision-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+    }
+    .letter-box {
+      background: #fafafa;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 22px 26px;
+      font-size: 0.875rem;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      color: var(--color-text);
+      font-family: 'Inter', sans-serif;
+    }
+    .letter-placeholder {
+      padding: 32px;
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* ── Audit Trail ── */
+    .audit-collapsible-btn {
+      width: 100%;
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 13px 18px;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .audit-collapsible-btn:hover { background: #eceef2; }
+    #audit-chevron { transition: transform 0.2s; }
+    .audit-body { display: none; margin-top: 8px; }
+    .audit-body.open { display: block; }
+
+    .audit-log {
+      background: #0A2540;
+      border-radius: 8px;
+      padding: 18px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: #a8d8b8;
+      line-height: 1.8;
+    }
+    .audit-log .log-time { color: #7ec8e3; }
+    .audit-log .log-pass { color: #00A86B; }
+    .audit-log .log-flag { color: #D93025; }
+    .audit-log .log-review { color: #F5A623; }
+    .audit-log .log-error { color: #ff6b6b; }
+    .audit-log .log-info { color: #c8d8e3; }
+
+    /* ── Empty state ── */
+    .empty-state-card {
+      max-width: 480px;
+      margin: 80px auto;
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
+
+    /* Print scope */
+    @media print {
+      body > *:not(#print-scope) { display: none !important; }
+      #print-scope {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        background: #fff;
+        padding: 48px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        line-height: 1.85;
+        white-space: pre-wrap;
+        color: #000;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="print-scope" style="display:none;"></div>
+
+<div class="page-wrapper">
+
+  <!-- ── Top Bar ── -->
+  <header class="topbar">
+    <a href="index.html" class="brand">Claim<span>Heart</span></a>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <a href="patient.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">👤 Patient</a>
+      <a href="hospital.html" target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">➕ Hospital</a>
+      <a href="insurer.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">🛡️ Insurer</a>
+      <a href="index.html"    target="_blank" style="color:rgba(255,255,255,0.5);  font-size:0.83rem;">← Home</a>
+    </div>
+  </header>
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="container">
+      <h2>Insurer Dashboard</h2>
+      <p>Real-time AI adjudication pipeline. Three agents analyse each claim sequentially.</p>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="container" id="main-container">
+      <!-- Content injected by JS -->
+    </div>
+  </main>
+
+  <footer class="footer">
+    &copy; 2025 ClaimHeart. All rights reserved.
+  </footer>
+
+</div>
+
+<script>
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function statusClass(status) {
+  var s = (status || '').toUpperCase();
+  if (s === 'PASS')   return 'badge-approved';
+  if (s === 'FLAG')   return 'badge-denied';
+  if (s === 'REVIEW') return 'badge-review';
+  if (s === 'ERROR')  return 'badge-pending';
+  return 'badge-pending';
+}
+
+function bigBadgeClass(decision) {
+  var d = (decision || '').toUpperCase();
+  if (d === 'APPROVED')     return 'big-badge-approved';
+  if (d === 'DENIED')       return 'big-badge-denied';
+  if (d === 'UNDER_REVIEW') return 'big-badge-review';
+  return 'big-badge-analysing';
+}
+
+function decisionLabel(decision) {
+  var d = (decision || '').toUpperCase();
+  if (d === 'APPROVED')     return '✅ APPROVED';
+  if (d === 'DENIED')       return '❌ DENIED';
+  if (d === 'UNDER_REVIEW') return '🔍 UNDER REVIEW';
+  return '⏳ Analysing...';
+}
+
+function agentCardClass(status) {
+  var s = (status || '').toUpperCase();
+  if (s === 'PASS')   return 'pass';
+  if (s === 'FLAG')   return 'flag';
+  if (s === 'REVIEW') return 'review';
+  if (s === 'ERROR')  return 'error';
+  return '';
+}
+
+// ─── Audit log entries ────────────────────────────────────────────────────────
+var auditEntries = [];
+
+function addAudit(msg, cls) {
+  var now = new Date().toISOString();
+  auditEntries.push({ time: now, msg: msg, cls: cls || 'log-info' });
+  renderAudit();
+}
+
+function renderAudit() {
+  var el = document.getElementById('audit-log-content');
+  if (!el) return;
+  el.innerHTML = auditEntries.map(function(e) {
+    return '<span class="log-time">[' + fmtTime(e.time) + ']</span> ' +
+           '<span class="' + e.cls + '">' + escHtml(e.msg) + '</span>';
+  }).join('\n');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── Loading pulse HTML ───────────────────────────────────────────────────────
+function pulseHtml(text) {
+  return '<div class="pulse-loader">' +
+    '<div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div>' +
+    '<span class="pulse-text">' + (text || 'Running agent...') + '</span>' +
+  '</div>';
+}
+
+function idleHtml() {
+  return '<div class="agent-idle">Waiting to start...</div>';
+}
+
+// ─── Render agent card ────────────────────────────────────────────────────────
+function renderAgentCard(id, title, icon, content, cardClass) {
+  var card = document.getElementById(id);
+  if (!card) return;
+  card.className = 'agent-card ' + (cardClass || '');
+  card.innerHTML =
+    '<div class="agent-card-title">' + title + '</div>' +
+    (icon ? '<div class="agent-card-icon">' + icon + '</div>' : '') +
+    content;
+}
+
+function agentRunningCard(id, title) {
+  renderAgentCard(id, title, '⏳', pulseHtml('Agent running...'), 'running');
+}
+
+function agentDoneCard(id, title, result) {
+  var st = (result.status || '').toUpperCase();
+  var icon = st === 'PASS' ? '✅' : st === 'FLAG' ? '🚩' : st === 'REVIEW' ? '🔍' : '⚠️';
+  var content =
+    '<span class="badge ' + statusClass(result.status) + '" style="font-size:0.8rem;">' + (result.status || '—') + '</span>' +
+    '<div class="agent-reason">' + escHtml(result.reason || '') + '</div>' +
+    '<div class="agent-confidence">Confidence: <strong>' + escHtml(result.confidence || '—') + '</strong></div>';
+  renderAgentCard(id, title, icon, content, agentCardClass(result.status));
+}
+
+// ─── Update header status badge ───────────────────────────────────────────────
+function setHeaderStatus(decision) {
+  var el = document.getElementById('header-status-badge');
+  if (!el) return;
+  el.className = 'big-badge ' + bigBadgeClass(decision);
+  el.textContent = decisionLabel(decision);
+}
+
+// ─── Render final decision section ───────────────────────────────────────────
+function renderFinalDecision(bundle) {
+  var el = document.getElementById('final-decision-content');
+  if (!el) return;
+
+  var letter = bundle.letter || bundle.decisionLetter || '';
+  el.innerHTML =
+    '<div class="final-decision-top">' +
+      '<div class="final-decision-label">Final Adjudication</div>' +
+      '<span class="big-badge ' + bigBadgeClass(bundle.finalDecision) + '">' +
+        decisionLabel(bundle.finalDecision) +
+      '</span>' +
+    '</div>' +
+    (letter
+      ? '<div class="letter-box" id="letter-text">' + escHtml(letter) + '</div>' +
+        '<div style="margin-top:14px; text-align:right;">' +
+          '<button class="btn btn-outline" onclick="printLetter()">🖨️ Print Letter</button>' +
+        '</div>'
+      : '<div class="letter-placeholder">Decision letter will appear here once analysis is complete.</div>'
+    );
+}
+
+function printLetter() {
+  var el = document.getElementById('letter-text');
+  var ps = document.getElementById('print-scope');
+  if (!el || !ps) return;
+  ps.textContent = el.innerText;
+  ps.style.display = 'block';
+  window.print();
+  ps.style.display = 'none';
+}
+
+// ─── Toggle audit ─────────────────────────────────────────────────────────────
+function toggleAudit() {
+  var body = document.getElementById('audit-body');
+  var chev = document.getElementById('audit-chevron');
+  if (!body) return;
+  var open = body.classList.toggle('open');
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ─── Build full page for a claim ─────────────────────────────────────────────
+function buildPage(claim) {
+  var container = document.getElementById('main-container');
+
+  container.innerHTML =
+
+    // S1 — Claim Header
+    '<section class="section">' +
+      '<div class="section-title">Claim Overview</div>' +
+      '<div class="card claim-header-card">' +
+        '<div class="claim-header-fields">' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Claim ID</div>' +
+            '<div class="chf-value">' + escHtml(claim.claimId || '—') + '</div>' +
+          '</div>' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Patient Name</div>' +
+            '<div class="chf-value">' + escHtml(claim.patientName || '—') + '</div>' +
+          '</div>' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Policy Number</div>' +
+            '<div class="chf-value">' + escHtml(claim.policyNumber || '—') + '</div>' +
+          '</div>' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Insurance Company</div>' +
+            '<div class="chf-value">' + escHtml(claim.insurer || '—') + '</div>' +
+          '</div>' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Case Type</div>' +
+            '<div class="chf-value">' + escHtml(claim.caseType || claim.caseLabel || '—') + '</div>' +
+          '</div>' +
+          '<div class="claim-header-field">' +
+            '<div class="chf-label">Date Submitted</div>' +
+            '<div class="chf-value">' + fmtDate(claim.dateSubmitted) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="claim-status-side">' +
+          '<div class="status-label">Decision</div>' +
+          '<span class="big-badge big-badge-analysing" id="header-status-badge">⏳ Analysing...</span>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+
+    // S2 — Agent Results
+    '<section class="section">' +
+      '<div class="section-title">Agent Results</div>' +
+      '<div class="agent-grid">' +
+        '<div class="agent-card" id="agent-card-policy">' +
+          '<div class="agent-card-title">Agent 1 — Policy Check</div>' +
+          '<div>' + idleHtml() + '</div>' +
+        '</div>' +
+        '<div class="agent-card" id="agent-card-medical">' +
+          '<div class="agent-card-title">Agent 2 — Medical Protocol</div>' +
+          '<div>' + idleHtml() + '</div>' +
+        '</div>' +
+        '<div class="agent-card" id="agent-card-cross">' +
+          '<div class="agent-card-title">Agent 3 — Cross Validation</div>' +
+          '<div>' + idleHtml() + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+
+    // S3 — Final Decision
+    '<section class="section">' +
+      '<div class="section-title">Final Decision & Letter</div>' +
+      '<div class="card final-decision-card" id="final-decision-card">' +
+        '<div id="final-decision-content">' +
+          '<div class="letter-placeholder">' + pulseHtml('Waiting for agent pipeline to complete...') + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+
+    // S4 — Audit Trail
+    '<section class="section">' +
+      '<button class="audit-collapsible-btn" onclick="toggleAudit()">' +
+        '<span>📋 Full Agent Audit Trail</span>' +
+        '<span id="audit-chevron">▼</span>' +
+      '</button>' +
+      '<div class="audit-body" id="audit-body">' +
+        '<div class="audit-log" id="audit-log-content" style="max-height:280px;overflow-y:auto;"></div>' +
+      '</div>' +
+    '</section>';
+}
+
+// ─── Tiny delay helper ───────────────────────────────────────────────────────
+function wait(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
+
+// ─── Run pipeline with sequential visual updates ──────────────────────────────
+async function runPipeline(claim) {
+  var patient   = window.getPatient ? window.getPatient() : {};
+  var documents = claim.documents   || {};
+  var caseNumber= claim.caseNumber  || 0;
+
+  addAudit('Pipeline started for claim ' + claim.claimId, 'log-info');
+  addAudit('Case: ' + (claim.caseLabel || caseNumber), 'log-info');
+  addAudit('Patient: ' + (claim.patientName || '—'), 'log-info');
+
+  // ── Agent 1: Policy ──
+  agentRunningCard('agent-card-policy', 'Agent 1 — Policy Check');
+  addAudit('Agent 1 (PolicyAgent) started', 'log-info');
+  var t1start = Date.now();
+
+  var policyResult = await window.runPolicyAgent(patient, documents, caseNumber);
+
+  var t1ms = Date.now() - t1start;
+  agentDoneCard('agent-card-policy', 'Agent 1 — Policy Check', policyResult);
+  var logCls1 = policyResult.status === 'FLAG' ? 'log-flag' : policyResult.status === 'ERROR' ? 'log-error' : 'log-pass';
+  addAudit('Agent 1 complete in ' + (t1ms/1000).toFixed(1) + 's — ' + policyResult.status + ': ' + (policyResult.reason || '').substring(0,80) + '...', logCls1);
+
+  // 300ms visual pause so judge sees Agent 1 result before Agent 2 loader appears
+  await wait(300);
+
+  // ── Agent 2: Medical ──
+  agentRunningCard('agent-card-medical', 'Agent 2 — Medical Protocol');
+  addAudit('Agent 2 (MedicalAgent) started', 'log-info');
+  var t2start = Date.now();
+
+  var medicalResult = await window.runMedicalAgent(documents, caseNumber);
+
+  var t2ms = Date.now() - t2start;
+  agentDoneCard('agent-card-medical', 'Agent 2 — Medical Protocol', medicalResult);
+  var logCls2 = medicalResult.status === 'FLAG' ? 'log-flag' : medicalResult.status === 'ERROR' ? 'log-error' : 'log-pass';
+  addAudit('Agent 2 complete in ' + (t2ms/1000).toFixed(1) + 's — ' + medicalResult.status + ': ' + (medicalResult.reason || '').substring(0,80) + '...', logCls2);
+
+  // 300ms visual pause so judge sees Agent 2 result before Agent 3 loader appears
+  await wait(300);
+
+  // ── Agent 3: Cross Validation ──
+  agentRunningCard('agent-card-cross', 'Agent 3 — Cross Validation');
+  addAudit('Agent 3 (CrossValidationAgent) started', 'log-info');
+  var t3start = Date.now();
+
+  var crossResult = await window.runCrossValidationAgent(documents, policyResult, medicalResult, caseNumber);
+
+  var t3ms = Date.now() - t3start;
+  agentDoneCard('agent-card-cross', 'Agent 3 — Cross Validation', crossResult);
+  var logCls3 = crossResult.status === 'FLAG' ? 'log-flag' : crossResult.status === 'REVIEW' ? 'log-review' : crossResult.status === 'ERROR' ? 'log-error' : 'log-pass';
+  addAudit('Agent 3 complete in ' + (t3ms/1000).toFixed(1) + 's — ' + crossResult.status + ' | Final: ' + (crossResult.finalDecision || '—'), logCls3);
+
+  // ── Bundle & save ──
+  var bundle = {
+    caseNumber:    caseNumber,
+    caseLabel:     claim.caseLabel || '',
+    patientName:   claim.patientName || '',
+    policyNumber:  claim.policyNumber || '',
+    policyResult:  policyResult,
+    medicalResult: medicalResult,
+    crossResult:   crossResult,
+    finalDecision: crossResult.finalDecision || 'UNDER_REVIEW',
+    letter:        crossResult.decisionLetter || '',
+    completedAt:   new Date().toISOString()
+  };
+
+  if (window.saveResult) window.saveResult(bundle);
+
+  // Update claim status
+  if (window.saveClaim) {
+    var statusMap = { 'APPROVED':'Approved', 'DENIED':'Denied', 'UNDER_REVIEW':'Under Review' };
+    claim.status = statusMap[bundle.finalDecision] || 'Under Review';
+    window.saveClaim(claim);
+  }
+
+  // ── Update UI ──
+  setHeaderStatus(bundle.finalDecision);
+  renderFinalDecision(bundle);
+
+  var totalMs = t1ms + t2ms + t3ms;
+  var decCls = bundle.finalDecision === 'APPROVED' ? 'log-pass' : bundle.finalDecision === 'DENIED' ? 'log-flag' : 'log-review';
+  addAudit('━━━ PIPELINE COMPLETE in ' + (totalMs/1000).toFixed(1) + 's ━━━', 'log-info');
+  addAudit('Final Decision: ' + bundle.finalDecision, decCls);
+
+  // Auto-open audit trail
+  var auditBody = document.getElementById('audit-body');
+  var auditChev = document.getElementById('audit-chevron');
+  if (auditBody && !auditBody.classList.contains('open')) {
+    auditBody.classList.add('open');
+    if (auditChev) auditChev.style.transform = 'rotate(180deg)';
+  }
+}
+
+// ─── Page Init ────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  var claim   = window.getClaim   ? window.getClaim()   : null;
+  var container = document.getElementById('main-container');
+
+  if (!claim) {
+    container.innerHTML =
+      '<div class="card empty-state-card">' +
+        '<div class="empty-state-icon">&#128737;</div>' +
+        '<h3 style="margin-bottom:12px; color:var(--color-primary);">No Claim Submitted Yet</h3>' +
+        '<p class="text-muted" style="margin-bottom:24px; font-size:0.9rem; line-height:1.6;">' +
+          'A claim must be submitted from the Hospital Dashboard before analysis can begin.' +
+        '</p>' +
+        '<a href="hospital.html" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Go to Hospital Dashboard</a>' +
+      '</div>';
+    return;
+  }
+
+  buildPage(claim);
+  runPipeline(claim);
+});
+</script>
+</body>
+</html>

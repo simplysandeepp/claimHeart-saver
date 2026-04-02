@@ -1,0 +1,435 @@
+/* ============================================================
+   ClaimHeart — Shared Styles
+   Colors:
+     Primary (Navy)    : #0A2540
+     Approved (Green)  : #00A86B
+     Denied (Red)      : #D93025
+     Under Review (Amber): #F5A623
+     Background        : #FFFFFF
+   ============================================================ */
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #FFFFFF;
+  color: #1A2B3C;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- CSS Variables ---------- */
+:root {
+  --color-primary:   #0A2540;
+  --color-primary-light: #1a3a5c;
+  --color-approved:  #00A86B;
+  --color-denied:    #D93025;
+  --color-review:    #F5A623;
+  --color-bg:        #FFFFFF;
+  --color-bg-subtle: #F4F6F9;
+  --color-border:    #DDE3EC;
+  --color-text:      #1A2B3C;
+  --color-text-muted:#5A6A7E;
+  --radius-card:     12px;
+  --radius-btn:      8px;
+  --shadow-card:     0 2px 12px rgba(10, 37, 64, 0.08);
+  --shadow-card-hover: 0 6px 24px rgba(10, 37, 64, 0.14);
+}
+
+/* ---------- Typography ---------- */
+h1, h2, h3, h4, h5 {
+  color: var(--color-primary);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.25rem; }
+
+p {
+  color: var(--color-text);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* ---------- Layout Helpers ---------- */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px 0;
+}
+
+/* ---------- Topbar / Nav ---------- */
+.topbar {
+  background-color: var(--color-primary);
+  color: #fff;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.topbar .brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.topbar .brand span {
+  color: var(--color-approved);
+}
+
+.topbar nav a {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.875rem;
+  margin-left: 24px;
+  transition: color 0.15s;
+}
+
+.topbar nav a:hover {
+  color: #fff;
+}
+
+/* ---------- Page Header ---------- */
+.page-header {
+  background-color: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+  padding: 28px 0;
+}
+
+.page-header p {
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.card-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: var(--radius-btn);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-light);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-success {
+  background-color: var(--color-approved);
+  color: #fff;
+}
+
+.btn-danger {
+  background-color: var(--color-denied);
+  color: #fff;
+}
+
+.btn-lg {
+  padding: 14px 32px;
+  font-size: 1.05rem;
+  border-radius: 10px;
+}
+
+/* ---------- Status Badges ---------- */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.badge-approved {
+  background-color: #E6F7F1;
+  color: var(--color-approved);
+}
+
+.badge-denied {
+  background-color: #FDECEB;
+  color: var(--color-denied);
+}
+
+.badge-review {
+  background-color: #FEF4E3;
+  color: var(--color-review);
+}
+
+.badge-pending {
+  background-color: #EEF1F5;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Table ---------- */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead {
+  background-color: var(--color-bg-subtle);
+}
+
+thead th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+/* ---------- Form Elements ---------- */
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background-color: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+/* ---------- Alert / Callout ---------- */
+.alert {
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+}
+
+.alert-success {
+  background-color: #E6F7F1;
+  border-color: var(--color-approved);
+  color: #005c3b;
+}
+
+.alert-danger {
+  background-color: #FDECEB;
+  border-color: var(--color-denied);
+  color: #7d1a13;
+}
+
+.alert-warning {
+  background-color: #FEF4E3;
+  border-color: var(--color-review);
+  color: #7a4f00;
+}
+
+.alert-info {
+  background-color: #EEF3FB;
+  border-color: #4A90E2;
+  color: #1a3a6e;
+}
+
+/* ---------- Section Utilities ---------- */
+.section {
+  margin-bottom: 36px;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* ---------- Stat Cards ---------- */
+.stat-card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.stat-card.approved .stat-value { color: var(--color-approved); }
+.stat-card.denied   .stat-value { color: var(--color-denied); }
+.stat-card.review   .stat-value { color: var(--color-review); }
+
+/* ---------- Footer ---------- */
+.footer {
+  background-color: var(--color-bg-subtle);
+  border-top: 1px solid var(--color-border);
+  padding: 18px 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Utility ---------- */
+.text-muted  { color: var(--color-text-muted) !important; }
+.text-right  { text-align: right; }
+.text-center { text-align: center; }
+.mt-8  { margin-top:  8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-8  { margin-bottom:  8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.flex  { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-8  { gap: 8px; }
+.gap-16 { gap: 16px; }
+.hidden { display: none; }

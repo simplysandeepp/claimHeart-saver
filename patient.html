@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ClaimHeart — Patient Dashboard. Manage your profile and track claim status." />
+  <title>ClaimHeart | Patient Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="data.js" defer></script>
+
+  <style>
+    /* ── Page-specific overrides ── */
+    .patient-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 780px) {
+      .patient-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 540px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* Banner */
+    .banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .banner-success {
+      background: #e6f7f1;
+      border: 1px solid var(--color-approved);
+      color: #005c3b;
+    }
+    .banner-info {
+      background: #EEF3FB;
+      border: 1px solid #4A90E2;
+      color: #1a3a6e;
+    }
+    .banner-icon { font-size: 1rem; flex-shrink: 0; }
+
+    /* Claim card */
+    .claim-card {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+    .claim-card .claim-id {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .claim-card .claim-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+    }
+    .claim-card .claim-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .claim-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .claim-meta-label { color: var(--color-text-muted); }
+    .claim-meta-value { font-weight: 600; color: var(--color-text); }
+
+    .placeholder-box {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--color-text-muted);
+      background: var(--color-bg-subtle);
+      border: 1.5px dashed var(--color-border);
+      border-radius: var(--radius-card);
+      font-size: 0.9rem;
+    }
+    .placeholder-box .ph-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* Decision letter */
+    .letter-box {
+      background: #fafafa;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      font-family: 'Inter', monospace;
+      color: var(--color-text);
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    /* Print scope */
+    @media print {
+      body > *:not(#print-scope) { display: none !important; }
+      #print-scope {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        background: #fff;
+        padding: 40px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        color: #000;
+      }
+    }
+
+    /* Submit button full-width */
+    #save-profile-btn { width: 100%; margin-top: 4px; }
+
+    /* Toolbar above form */
+    .form-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .form-toolbar .section-title { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+
+    .autofill-select {
+      padding: 6px 10px;
+      border: 1.5px solid var(--color-border);
+      border-radius: 7px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-primary);
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+    }
+    .autofill-select:focus { border-color: var(--color-primary); }
+
+    .btn-clear {
+      padding: 6px 14px;
+      border: 1.5px solid var(--color-denied);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--color-denied);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-clear:hover { background: var(--color-denied); color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- Hidden print target -->
+<div id="print-scope" style="display:none;"></div>
+
+<div class="page-wrapper">
+
+  <!-- ── Top Bar ── -->
+  <header class="topbar">
+    <a href="index.html" class="brand">Claim<span>Heart</span></a>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <a href="patient.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">👤 Patient</a>
+      <a href="hospital.html" target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">➕ Hospital</a>
+      <a href="insurer.html"  target="_blank" style="color:rgba(255,255,255,0.75); font-size:0.83rem;">🛡️ Insurer</a>
+      <a href="index.html"    target="_blank" style="color:rgba(255,255,255,0.5);  font-size:0.83rem;">← Home</a>
+    </div>
+  </header>
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="container">
+      <h2>Patient Dashboard</h2>
+      <p>Manage your profile, track your claims, and download decision letters.</p>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Banners -->
+      <div id="banner-area"></div>
+
+      <div class="patient-grid">
+
+        <!-- ══ LEFT: Registration Form ══ -->
+        <section>
+          <!-- Toolbar: autofill + clear -->
+          <div class="form-toolbar">
+            <div class="section-title" style="flex:1;">Your Details</div>
+            <select class="autofill-select" id="autofill-select" onchange="autofillProfile(this.value)" title="Quick autofill">
+              <option value="">⚡ Quick Autofill...</option>
+              <option value="riya">Riya Sharma (Case 1)</option>
+              <option value="arjun">Arjun Mehta (Case 2 / 3)</option>
+            </select>
+            <button class="btn-clear" onclick="clearLogs()" title="Clear all saved patient data">🗑 Clear Logs</button>
+          </div>
+
+          <div class="card" style="padding: 28px;">
+            <form id="patient-form" novalidate>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="full-name">Full Name <span style="color:var(--color-denied)">*</span></label>
+                  <input type="text" id="full-name" placeholder="e.g. Riya Sharma" required />
+                </div>
+                <div class="form-group">
+                  <label for="dob">Date of Birth <span style="color:var(--color-denied)">*</span></label>
+                  <input type="date" id="dob" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="gender">Gender</label>
+                  <select id="gender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="contact">Contact Number <span style="color:var(--color-denied)">*</span></label>
+                  <input type="tel" id="contact" placeholder="e.g. +91 98765 43210" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email <span style="color:var(--color-denied)">*</span></label>
+                <input type="email" id="email" placeholder="e.g. riya@example.com" required />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="policy-number">Policy Number <span style="color:var(--color-denied)">*</span></label>
+                  <input type="text" id="policy-number" placeholder="e.g. HDFC-ERGO-2025-784512" required />
+                </div>
+                <div class="form-group">
+                  <label for="insurance-company">Insurance Company <span style="color:var(--color-denied)">*</span></label>
+                  <input type="text" id="insurance-company" placeholder="e.g. HDFC ERGO" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="policy-start">Policy Start Date <span style="color:var(--color-denied)">*</span></label>
+                <input type="date" id="policy-start" required />
+              </div>
+
+              <div class="form-group">
+                <label for="pre-existing">Pre-existing Conditions <span class="text-muted" style="font-weight:400;">(optional)</span></label>
+                <textarea id="pre-existing" rows="3" placeholder="e.g. Type 2 Diabetes, Hypertension"></textarea>
+              </div>
+
+              <!-- Field-level error -->
+              <div id="form-error" class="alert alert-danger" style="display:none; margin-bottom:12px;"></div>
+
+              <button type="submit" class="btn btn-primary" id="save-profile-btn">
+                Save Profile
+              </button>
+
+            </form>
+          </div>
+        </section>
+
+        <!-- ══ RIGHT: Claims + Letter ══ -->
+        <section>
+
+          <!-- Claims -->
+          <div class="section-title">Your Claims</div>
+          <div id="claims-area" class="mb-24">
+            <div class="placeholder-box">
+              <div class="ph-icon">📂</div>
+              <div>No active claims yet.</div>
+            </div>
+          </div>
+
+          <!-- Decision Letter -->
+          <div class="section-title mt-24">Decision Letter</div>
+          <div id="letter-area">
+            <div class="placeholder-box">
+              <div class="ph-icon">📄</div>
+              <div>No decision letter available yet.</div>
+            </div>
+          </div>
+
+        </section>
+      </div><!-- /.patient-grid -->
+
+    </div><!-- /.container -->
+  </main>
+
+  <footer class="footer">
+    &copy; 2025 ClaimHeart. All rights reserved.
+  </footer>
+
+</div><!-- /.page-wrapper -->
+
+<script>
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function showBanner(type, message) {
+    const icon = type === 'success' ? '✅' : 'ℹ️';
+    const div = document.createElement('div');
+    div.className = `banner banner-${type}`;
+    div.innerHTML = `<span class="banner-icon">${icon}</span><span>${message}</span>`;
+    document.getElementById('banner-area').appendChild(div);
+    // Auto-dismiss success after 5 s
+    if (type === 'success') setTimeout(() => div.remove(), 5000);
+  }
+
+  function statusBadge(status) {
+    const map = {
+      'Approved':     'badge-approved',
+      'Denied':       'badge-denied',
+      'Under Review': 'badge-review',
+      'Pending':      'badge-pending',
+    };
+    const cls = map[status] || 'badge-pending';
+    return `<span class="badge ${cls}">${status || 'Pending'}</span>`;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  // ── Fill form from saved profile ─────────────────────────────────────────────
+
+  function fillForm(profile) {
+    document.getElementById('full-name').value          = profile.fullName         || '';
+    document.getElementById('dob').value                = profile.dob              || '';
+    document.getElementById('gender').value             = profile.gender           || 'Male';
+    document.getElementById('contact').value            = profile.contact          || '';
+    document.getElementById('email').value              = profile.email            || '';
+    document.getElementById('policy-number').value      = profile.policyNumber     || '';
+    document.getElementById('insurance-company').value  = profile.insuranceCompany || '';
+    document.getElementById('policy-start').value       = profile.policyStart      || '';
+    document.getElementById('pre-existing').value       = profile.preExisting      || '';
+  }
+
+  // ── Quick Autofill presets ────────────────────────────────────────────────────
+
+  var AUTOFILL_PRESETS = {
+    riya: {
+      fullName: 'Riya Sharma', dob: '1995-03-14', gender: 'Female',
+      contact: '+91 98765 00001', email: 'riya.sharma@example.com',
+      policyNumber: 'HDFC-ERGO-2025-784512', insuranceCompany: 'HDFC ERGO',
+      policyStart: '2025-01-25', preExisting: 'None reported'
+    },
+    arjun: {
+      fullName: 'Arjun Mehta', dob: '1993-06-12', gender: 'Male',
+      contact: '+91 98765 00002', email: 'arjun.mehta@example.com',
+      policyNumber: 'HDFC-ERGO-2025-991203', insuranceCompany: 'HDFC ERGO',
+      policyStart: '2023-03-10', preExisting: 'None reported'
+    }
+  };
+
+  function autofillProfile(key) {
+    if (!key) return;
+    var preset = AUTOFILL_PRESETS[key];
+    if (!preset) return;
+    fillForm(preset);
+    // Reset dropdown back to placeholder
+    document.getElementById('autofill-select').value = '';
+    // Clear any inline error
+    document.getElementById('form-error').style.display = 'none';
+    // Show a brief info banner
+    document.querySelectorAll('.banner-info').forEach(function(b) { b.remove(); });
+    showBanner('info', 'Form autofilled with ' + preset.fullName + '\'s details. Click Save Profile to persist.');
+  }
+
+  // ── Clear all patient logs ────────────────────────────────────────────────────
+
+  function clearLogs() {
+    // Show inline confirm row instead of browser confirm() (unreliable on file://)
+    var existing = document.getElementById('clear-confirm-row');
+    if (existing) { existing.remove(); return; }
+
+    var row = document.createElement('div');
+    row.id = 'clear-confirm-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:#fff3f3;border:1.5px solid var(--color-denied);border-radius:8px;font-size:0.82rem;color:var(--color-denied);font-weight:500;';
+    row.innerHTML =
+      '<span style="flex:1;">⚠️ Delete all saved patient data?</span>' +
+      '<button onclick="confirmClearLogs()" style="padding:5px 14px;background:var(--color-denied);color:#fff;border:none;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;">Yes, Clear</button>' +
+      '<button onclick="document.getElementById(\'clear-confirm-row\').remove()" style="padding:5px 12px;background:transparent;color:var(--color-text-muted);border:1.5px solid var(--color-border);border-radius:6px;font-size:0.8rem;cursor:pointer;">Cancel</button>';
+    // Insert above the form card
+    var formCard = document.querySelector('.card');
+    formCard.parentNode.insertBefore(row, formCard);
+  }
+
+  function confirmClearLogs() {
+    // Remove confirm row
+    var row = document.getElementById('clear-confirm-row');
+    if (row) row.remove();
+
+    // Clear ALL claimheart_* keys dynamically
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf('claimheart_') === 0) localStorage.removeItem(k);
+    });
+
+    // Reset form
+    document.getElementById('patient-form').reset();
+    document.getElementById('form-error').style.display = 'none';
+
+    // Reset right column
+    document.getElementById('claims-area').innerHTML =
+      '<div class="placeholder-box"><div class="ph-icon">📂</div><div>No active claims yet.</div></div>';
+    document.getElementById('letter-area').innerHTML =
+      '<div class="placeholder-box"><div class="ph-icon">📄</div><div>No decision letter available yet.</div></div>';
+
+    // Confirm banner
+    document.getElementById('banner-area').innerHTML = '';
+    showBanner('success', 'All patient logs cleared.');
+  }
+
+  // ── Render claim card ─────────────────────────────────────────────────────────
+
+  function renderClaim(claim) {
+    const area = document.getElementById('claims-area');
+    area.innerHTML = `
+      <div class="claim-card">
+        <div class="claim-id">CLAIM ID: ${claim.claimId || '—'}</div>
+        <div class="claim-name">${claim.patientName || '—'}</div>
+        <div class="claim-meta">
+          <div class="claim-meta-row">
+            <span class="claim-meta-label">Case Type</span>
+            <span class="claim-meta-value">${claim.caseType || '—'}</span>
+          </div>
+          <div class="claim-meta-row">
+            <span class="claim-meta-label">Status</span>
+            <span>${statusBadge(claim.status)}</span>
+          </div>
+          <div class="claim-meta-row">
+            <span class="claim-meta-label">Date Submitted</span>
+            <span class="claim-meta-value">${formatDate(claim.dateSubmitted)}</span>
+          </div>
+          <div class="claim-meta-row">
+            <span class="claim-meta-label">Amount Claimed</span>
+            <span class="claim-meta-value">${claim.amountClaimed ? '₹' + Number(claim.amountClaimed).toLocaleString('en-IN') : '—'}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Render decision letter ────────────────────────────────────────────────────
+
+  function renderLetter(letter) {
+    const area = document.getElementById('letter-area');
+    area.innerHTML = `
+      <div class="card" style="padding:20px;">
+        <div class="letter-box" id="letter-content">${escapeHtml(letter)}</div>
+        <div style="margin-top:14px; text-align:right;">
+          <button class="btn btn-outline" id="print-btn" onclick="printLetter()">
+            🖨️ Download / Print Letter
+          </button>
+        </div>
+      </div>`;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function printLetter() {
+    const content = document.getElementById('letter-content')?.innerText || '';
+    const ps = document.getElementById('print-scope');
+    ps.textContent = content;
+    ps.style.display = 'block';
+    window.print();
+    ps.style.display = 'none';
+  }
+
+  // ── Page initialisation ───────────────────────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // Load existing profile
+    const saved = window.getPatient ? window.getPatient() : null;
+    if (saved) {
+      fillForm(saved);
+      showBanner('info', 'Existing profile loaded from your last session.');
+    }
+
+    // Load existing claim
+    const claim = window.getClaim ? window.getClaim() : null;
+    if (claim) renderClaim(claim);
+
+    // Load decision letter
+    const result = window.getResult ? window.getResult() : null;
+    if (result && result.letter) renderLetter(result.letter);
+
+    // ── Form submit ────────────────────────────────────────────────────────────
+    document.getElementById('patient-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const errBox = document.getElementById('form-error');
+      errBox.style.display = 'none';
+
+      const fullName        = document.getElementById('full-name').value.trim();
+      const dob             = document.getElementById('dob').value;
+      const gender          = document.getElementById('gender').value;
+      const contact         = document.getElementById('contact').value.trim();
+      const email           = document.getElementById('email').value.trim();
+      const policyNumber    = document.getElementById('policy-number').value.trim();
+      const insuranceCompany= document.getElementById('insurance-company').value.trim();
+      const policyStart     = document.getElementById('policy-start').value;
+      const preExisting     = document.getElementById('pre-existing').value.trim();
+
+      // Validation
+      const missing = [];
+      if (!fullName)         missing.push('Full Name');
+      if (!dob)             missing.push('Date of Birth');
+      if (!contact)         missing.push('Contact Number');
+      if (!email)           missing.push('Email');
+      if (!policyNumber)    missing.push('Policy Number');
+      if (!insuranceCompany) missing.push('Insurance Company');
+      if (!policyStart)     missing.push('Policy Start Date');
+
+      // Basic email check
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        missing.push('valid Email address');
+      }
+
+      if (missing.length > 0) {
+        errBox.textContent = 'Please fill in: ' + missing.join(', ') + '.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const profile = { fullName, dob, gender, contact, email, policyNumber, insuranceCompany, policyStart, preExisting };
+
+      if (window.savePatient) window.savePatient(profile);
+
+      // Remove any old success banner first
+      document.querySelectorAll('.banner-success').forEach(b => b.remove());
+      showBanner('success', 'Profile saved successfully.');
+    });
+
+  });
+</script>
+</body>
+</html>

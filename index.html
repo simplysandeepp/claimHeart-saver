@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="ClaimHeart — AI-Powered Insurance Fraud Detection. Capgemini Agentic Buildathon 2026 Round 1 Prototype." />
+  <title>ClaimHeart | AI-Powered Claims Adjudication</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* ── Full-viewport centered layout ── */
+    html,
+    body {
+      height: 100%;
+    }
+
+    .landing-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      background: #fff;
+    }
+
+    /* ── Hero Text ── */
+    .landing-logo {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--color-primary);
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .landing-logo span {
+      color: var(--color-approved);
+    }
+
+    .landing-tagline {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .landing-subtitle {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin-bottom: 48px;
+    }
+
+    /* ── Dashboard Cards ── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      width: 100%;
+      max-width: 820px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 680px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+      }
+    }
+
+    .dash-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 36px 24px 30px;
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .dash-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(10, 37, 64, 0.13);
+    }
+
+    .dash-icon {
+      font-size: 2.6rem;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+
+    .dash-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .dash-subtitle {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Disclaimer ── */
+    .landing-disclaimer {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="landing-wrapper">
+
+    <!-- Logo -->
+    <div class="landing-logo">Claim<span>Heart</span></div>
+
+    <!-- Tagline -->
+    <div class="landing-tagline">AI-Powered Insurance Fraud Detection</div>
+
+    <!-- Subtitle -->
+    <div class="landing-subtitle">Round 1 Prototype — Capgemini Agentic Buildathon 2026</div>
+
+    <!-- Dashboard Cards -->
+    <div class="dashboard-grid">
+
+      <a href="patient.html" class="dash-card" id="card-patient">
+        <div class="dash-icon">👤</div>
+        <div class="dash-title">Patient</div>
+        <div class="dash-subtitle">Fill details and track claims</div>
+      </a>
+
+      <a href="hospital.html" class="dash-card" id="card-hospital">
+        <div class="dash-icon">➕</div>
+        <div class="dash-title">Hospital</div>
+        <div class="dash-subtitle">Submit claims and upload documents</div>
+      </a>
+
+      <a href="insurer.html" class="dash-card" id="card-insurer">
+        <div class="dash-icon">🛡️</div>
+        <div class="dash-title">Insurer</div>
+        <div class="dash-subtitle">Review AI analysis and decisions</div>
+      </a>
+
+    </div>
+
+    <!-- Disclaimer -->
+    <p class="landing-disclaimer">
+      Demo uses synthetic data. No real patient information is stored.
+    </p>
+
+  </div><!-- /.landing-wrapper -->
+
+  <!-- ── API Key Panel (fixed bottom-right) ── -->
+  <div id="api-key-panel" style="
+    position:fixed; bottom:20px; right:20px;
+    background:#fff;
+    border:1px solid var(--color-border);
+    border-radius:12px;
+    box-shadow:0 8px 28px rgba(10,37,64,0.14);
+    padding:16px 18px;
+    width:284px;
+    z-index:1000;
+    font-family:'Inter',sans-serif;
+  ">
+    <div
+      style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--color-text-muted);margin-bottom:6px;">
+      🔑 Groq API Key
+    </div>
+    <div style="font-size:0.75rem;color:var(--color-text-muted);margin-bottom:10px;line-height:1.4;">
+      Enter once — saved locally for this demo session.
+    </div>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." style="
+        width:100%;box-sizing:border-box;
+        padding:8px 10px;
+        border:1.5px solid var(--color-border);
+        border-radius:7px;
+        font-family:'Inter',sans-serif;
+        font-size:0.82rem;
+        color:var(--color-text);
+        outline:none;
+        margin-bottom:10px;
+      " />
+    <button onclick="saveApiKey()" style="
+        width:100%;padding:9px;
+        background:var(--color-primary);color:#fff;
+        border:none;border-radius:7px;
+        font-family:'Inter',sans-serif;
+        font-size:0.85rem;font-weight:600;cursor:pointer;
+      ">Save Key</button>
+  </div>
+
+  <script>
+    (function () {
+      var panel = document.getElementById('api-key-panel');
+      var input = document.getElementById('api-key-input');
+      var hardcoded = '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';
+      var stored = localStorage.getItem('claimheart_api_key') || hardcoded;
+      // Always ensure the key is saved and window var is set
+      localStorage.setItem('claimheart_api_key', stored);
+      window.GROQ_API_KEY = stored;
+      input.value = stored;
+      // Hide the panel since key is pre-configured
+      panel.style.display = 'none';
+
+      window.saveApiKey = function () {
+        var val = (input.value || '').trim();
+        if (!val) { input.style.borderColor = 'var(--color-denied)'; return; }
+        localStorage.setItem('claimheart_api_key', val);
+        window.GROQ_API_KEY = val;
+        panel.style.display = 'none';
+      };
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') window.saveApiKey();
+      });
+    })();
+  </script>
+
+</body>
+
+</html>
